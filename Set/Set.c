@@ -6,8 +6,8 @@ TOrder* SetRemove(THashSet* set, size_t id) {
 	THashObject* it = (THashObject*)node->front;
 	while (it) {
 		if (it->order->id == id) {
-			LL_Remove(&it->node);
 			TOrder* order = it->order;
+			LL_Remove(&it->node);
 			free(it);
 			return order;
 		}
@@ -18,7 +18,11 @@ TOrder* SetRemove(THashSet* set, size_t id) {
 
 void SetInsert(THashSet* set, TOrder* order)
 {
-	THashNode* node = &set->hash[order->id % HASH_SIZE];
-	LL_PushBack(node, &order->node);
+	THashObject* object = (THashObject*)malloc(sizeof(THashObject));
+	if (object) {
+		THashNode* node = &set->hash[order->id % HASH_SIZE];
+		object->order = order;
+		LL_PushBack(node, &object->node);
+	}
 }
 

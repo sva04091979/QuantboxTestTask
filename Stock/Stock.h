@@ -1,7 +1,8 @@
 ﻿#pragma once
 
 #include "Market.h"
-extern const size_t* digits;
 
-TStock* StockStart(void(**task)(TStock*, TTradeTask*, size_t));
+const size_t digits[ITEMS_COUNT];
+
+TStock* StockStart(void(**task)(TStock*, TTradeQueue*));
 void StockStop(TStock* stock);

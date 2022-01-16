@@ -9,29 +9,31 @@
 
 const size_t digits[ITEMS_COUNT] = { 2 };
 
-void SendTask(TStock* stock, TTradeTask* task,size_t count) {
-	if (count > 0) {
-		TTradeTask* end = task + count;
-		HANDLE curMutex = stock->market[task->market].taskMutex;
-		Lock(curMutex);
-		while (task != end) {
-			TMarket* market = &stock->market[task->market];
-			HANDLE mutex = market->taskMutex;
-			if (mutex != curMutex) {
-				Unlock(curMutex);
-				curMutex = mutex;
-				Lock(curMutex);
+void SendTask(TStock* stock, TTradeQueue* queue) {
+		TTradeTask* it= (TTradeTask*)queue->front;
+		if (it) {
+			HANDLE curMutex = stock->market[it->market].taskMutex;
+			Lock(curMutex);
+			while (it) {
+				TMarket* market = &stock->market[it->market];
+				HANDLE mutex = market->taskMutex;
+				if (mutex != curMutex) {
+					Unlock(curMutex);
+					curMutex = mutex;
+					Lock(curMutex);
+				}
+				TTradeTask* task = it;
+				it= (TTradeTask*)it->node.next;
+				LL_PushBack(market->queue, &task->node);
 			}
-			LL_PushBack(market->queue, &task->node);
-			++task;
+			Unlock(curMutex);
 		}
-		Unlock(curMutex);
-	}
+	free(it);
 }
 
-TStock* StockStart(void(**task)(TStock*,TTradeTask*,size_t))
+TStock* StockStart(void(**task)(TStock*,TTradeQueue*))
 {
-	TStock* stock = (TStock*)_aligned_malloc(sizeof(TStock),64);
+	TStock* stock = (TStock*)_aligned_malloc(sizeof(TStock),sizeof(size_t));
 	if (stock) {
 		*task = SendTask;
 		stock->ordersNumber = 0;

@@ -3,4 +3,4 @@
 #include "stdio.h"
 #include "Stock/Stock.h"
 
-extern const size_t* digits;
+extern const size_t digits[ITEMS_COUNT];

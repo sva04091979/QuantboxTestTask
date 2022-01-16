@@ -48,12 +48,14 @@ size_t Deal(TMarket* market, TOrder* order) {
 
 void CancelOrder(TMarket* market,const size_t* id) {
 	TOrder* order = SetRemove(market->set,*id);
-	TPriceLevel* level = order->priceLevel;
-	LL_Remove(&order->node);
-	if (!level->queqe.front)
-		LL_Remove(&level->node);
-	LoggerCancel(market,order);
-	free(order);
+	if (order) {
+		TPriceLevel* level = order->priceLevel;
+		LL_Remove(&order->node);
+		if (!level->queqe.front)
+			LL_Remove(&level->node);
+		LoggerCancel(market, order);
+		free(order);
+	}
 }
 
 void Pending(TMarket* market, TOrder* order) {
@@ -65,33 +67,42 @@ void Pending(TMarket* market, TOrder* order) {
 	_max = side->_max;
 	_min = side->_min;
 	SetInsert(market->set, order);
-	while (TRUE) {
-		if (order->price == ((TOrder*)front->queqe.front)->price) {
-			LL_PushBack(&front->queqe, &order->node);
-			break;
+	if (!front) {
+		TPriceLevel* level = (TPriceLevel*)calloc(1,sizeof(TPriceLevel));
+		if (level) {
+			LL_PushBack(&level->queqe, &order->node);
+			LL_PushBack(&side->list, &level->node);
 		}
-		else if (order->price == ((TOrder*)back->queqe.front)->price) {
-			LL_PushBack(&back->queqe, &order->node);
-			break;
-		}
-		else if (_min(order->price, ((TOrder*)front->queqe.front)->price)) {
-			TPriceLevel* level = (TPriceLevel*)malloc(sizeof(TPriceLevel));
-			if (level) {
-				LL_PushBack(&level->queqe, &order->node);
-				LL_InsertBefore(&front->node, &level->node);
+	}
+	else {
+		while (TRUE) {
+			if (order->price == ((TOrder*)front->queqe.front)->price) {
+				LL_PushBack(&front->queqe, &order->node);
+				break;
 			}
-			break;
-		}
-		else if (_max(order->price, ((TOrder*)back->queqe.front)->price)) {
-			TPriceLevel* level = (TPriceLevel*)malloc(sizeof(TPriceLevel));
-			if (level) {
-				LL_PushBack(&level->queqe, &order->node);
-				LL_InsertAfter(&back->node, &level->node);
+			else if (order->price == ((TOrder*)back->queqe.front)->price) {
+				LL_PushBack(&back->queqe, &order->node);
+				break;
 			}
-			break;
+			else if (_min(order->price, ((TOrder*)front->queqe.front)->price)) {
+				TPriceLevel* level = (TPriceLevel*)calloc(1, sizeof(TPriceLevel));
+				if (level) {
+					LL_PushBack(&level->queqe, &order->node);
+					LL_InsertBefore(&front->node, &level->node);
+				}
+				break;
+			}
+			else if (_max(order->price, ((TOrder*)back->queqe.front)->price)) {
+				TPriceLevel* level = (TPriceLevel*)calloc(1, sizeof(TPriceLevel));
+				if (level) {
+					LL_PushBack(&level->queqe, &order->node);
+					LL_InsertAfter(&back->node, &level->node);
+				}
+				break;
+			}
+			front=(TPriceLevel*)front->node.next;
+			back=(TPriceLevel*)back->node.prev;
 		}
-		++front;
-		--back;
 	}
 }
 
