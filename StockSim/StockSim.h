@@ -1,8 +1,6 @@
-﻿// StockSim.h : включаемый файл для стандартных системных включаемых файлов
-// или включаемые файлы для конкретного проекта.
+﻿#pragma once
 
-#pragma once
+#include "stdio.h"
+#include "Stock/Stock.h"
 
-#include <iostream>
-
-// TODO: установите здесь ссылки на дополнительные заголовки, требующиеся для программы.
+extern const size_t* digits;
