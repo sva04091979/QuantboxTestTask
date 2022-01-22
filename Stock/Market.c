@@ -164,7 +164,7 @@ void MarketStart(TMarket* market)
 	market->set = (THashSet*)calloc(1, sizeof(THashSet));
 	market->queue= (TTradeQueue*)calloc(1, sizeof(TTradeQueue));
 	market->log = (TLogQueue*)calloc(1, sizeof(TLogQueue));
-	market->thread=ThreadCreate((LPTHREAD_START_ROUTINE)MarketRun, market,FALSE);
+	market->thread=ThreadCreate((FUNC_PTR)MarketRun, market,FALSE);
 	ResumeThread(market->thread);
 }
 

@@ -117,7 +117,7 @@ THREAD LoggerStart(TStock* stock)
 	if (param) {
 		param->stock = stock;
 		param->file = fopen("output.txt", "w+b");
-		log = ThreadCreate((LPTHREAD_START_ROUTINE)LoggerRun, param, TRUE);
+		log = ThreadCreate((FUNC_PTR)LoggerRun, param, TRUE);
 	}
 	return log;
 }

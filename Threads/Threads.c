@@ -3,10 +3,12 @@
 
 #include "Threads.h"
 
-THREAD ThreadCreate(LPTHREAD_START_ROUTINE func, LPVOID param,BOOL isStart)
+THREAD ThreadCreate(FUNC_PTR func, LPVOID param,BOOL isStart)
 {
+#ifdef _WIN32
 	DWORD flag = isStart ? 0 : CREATE_SUSPENDED;
 	return CreateThread(NULL, 0, func, param, flag, NULL);
+#endif
 }
 
 MUTEX MutexCreate()

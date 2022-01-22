@@ -10,12 +10,14 @@
 
 #ifdef _WIN32
 typedef HANDLE MUTEX, THREAD;
+typedef LPTHREAD_START_ROUTINE FUNC_PTR;
 #ifdef _WIN64
 	#define InterlockedInc InterlockedIncrement64
 #else
 	#define InterlockedInc InterlockedIncrement
 #endif
 #endif
+
 
 typedef enum {
 	BUY,
