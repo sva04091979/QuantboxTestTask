@@ -2,14 +2,19 @@
 
 #include "stddef.h"
 #include "time.h"
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #define HASH_SIZE 1024
 
+#ifdef _WIN32
+typedef HANDLE MUTEX, THREAD;
 #ifdef _WIN64
 	#define InterlockedInc InterlockedIncrement64
 #else
 	#define InterlockedInc InterlockedIncrement
+#endif
 #endif
 
 typedef enum {
@@ -107,9 +112,9 @@ typedef struct {
 	TTradeQueue* queue;
 	THashSet* set;
 	TStock* stock;
-	HANDLE taskMutex;
-	HANDLE loggerMutex;
-	HANDLE thread;
+	MUTEX taskMutex;
+	MUTEX loggerMutex;
+	THREAD thread;
 	size_t digits;
 	size_t timeEpoch;
 	clock_t timeControl;
@@ -120,7 +125,7 @@ typedef struct _TStock{
 	size_t dealsNumber;
 	size_t ordersNumber;
 	TMarket market[ITEMS_COUNT];
-	HANDLE logger;
+	THREAD logger;
 	BOOL stopFlag;
 } TStock;
 

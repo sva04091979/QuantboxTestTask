@@ -110,9 +110,9 @@ void LoggerRun(TLoggerParam* param) {
 	free(param);
 }
 
-HANDLE LoggerStart(TStock* stock)
+THREAD LoggerStart(TStock* stock)
 {
-	HANDLE log = NULL;
+	THREAD log = NULL;
 	TLoggerParam* param=(TLoggerParam*)malloc(sizeof(TLoggerParam));
 	if (param) {
 		param->stock = stock;

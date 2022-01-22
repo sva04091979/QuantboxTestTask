@@ -3,23 +3,23 @@
 
 #include "Threads.h"
 
-HANDLE ThreadCreate(LPTHREAD_START_ROUTINE func, LPVOID param,BOOL isStart)
+THREAD ThreadCreate(LPTHREAD_START_ROUTINE func, LPVOID param,BOOL isStart)
 {
 	DWORD flag = isStart ? 0 : CREATE_SUSPENDED;
 	return CreateThread(NULL, 0, func, param, flag, NULL);
 }
 
-HANDLE MutexCreate()
+MUTEX MutexCreate()
 {
 	return CreateMutex(NULL,FALSE,NULL);
 }
 
-void Lock(HANDLE mutex)
+void Lock(MUTEX mutex)
 {
 	WaitForSingleObject(mutex, INFINITE);
 }
 
-void Unlock(HANDLE mutex)
+void Unlock(MUTEX mutex)
 {
 	ReleaseMutex(mutex);
 }

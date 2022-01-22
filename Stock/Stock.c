@@ -12,11 +12,11 @@ const size_t digits[ITEMS_COUNT] = { 2 };
 void SendTask(TStock* stock, TTradeQueue* queue) {
 	TTradeTask* it = (TTradeTask*)queue->front;
 	if (it) {
-		HANDLE curMutex = stock->market[it->market].taskMutex;
+		MUTEX curMutex = stock->market[it->market].taskMutex;
 		Lock(curMutex);
 		while (it) {
 			TMarket* market = &stock->market[it->market];
-			HANDLE mutex = market->taskMutex;
+			MUTEX mutex = market->taskMutex;
 			if (mutex != curMutex) {
 				Unlock(curMutex);
 				curMutex = mutex;
@@ -54,17 +54,16 @@ TStock* StockStart(void(**task)(TStock*,TTradeQueue*))
 
 void StockStop(TStock* stock)
 {
-	HANDLE pause[ITEMS_COUNT];
+	THREAD pause[ITEMS_COUNT];
 	for (size_t i = 0; i < ITEMS_COUNT; ++i) {
-		pause[i] = MutexCreate();
-		MarketPause(&stock->market[i],pause[i]);
+		pause[i] = stock->market[i].thread;
+		MarketPause(&stock->market[i]);
 	}
 	WaitForMultipleObjects(ITEMS_COUNT, pause, TRUE, INFINITE);
 	stock->stopFlag = TRUE;
 	WaitForSingleObject(stock->logger, INFINITE);
 	CloseHandle(stock->logger);
 	for (size_t i = 0; i < ITEMS_COUNT; ++i) {
-		CloseHandle(pause[i]);
 		MarketClose(&stock->market[i]);
 	}
 	_aligned_free(stock);

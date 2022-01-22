@@ -168,12 +168,9 @@ void MarketStart(TMarket* market)
 	ResumeThread(market->thread);
 }
 
-void MarketPause(TMarket* market, HANDLE mutex)
+void MarketPause(TMarket* market)
 {
-	Lock(mutex);
 	market->stopFlag = TRUE;
-	WaitForSingleObject(market->thread, INFINITE);
-	Unlock(mutex);
 }
 
 void PriceLevelFree(TPriceLevel* level) {

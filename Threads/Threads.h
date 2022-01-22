@@ -2,7 +2,7 @@
 
 #include "Define.h"
 
-HANDLE ThreadCreate(LPTHREAD_START_ROUTINE func, LPVOID param, BOOL isStart);
-HANDLE MutexCreate();
-void Lock(HANDLE mutex);
-void Unlock(HANDLE mutex);
+THREAD ThreadCreate(LPTHREAD_START_ROUTINE func, LPVOID param, BOOL isStart);
+MUTEX MutexCreate();
+void Lock(MUTEX mutex);
+void Unlock(THREAD mutex);
