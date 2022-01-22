@@ -104,5 +104,6 @@ int main()
 	}
 	task(stock, queue);
 	StockStop(stock);
+	getch();
 	return 0;
 }
