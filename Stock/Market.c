@@ -113,6 +113,12 @@ void Pending(TMarket* market, TOrder* order) {
 	}
 }
 
+void TaskFree(TTradeTask* task) {
+	if (task->taskType == ORDER_CANCEL)
+		free(task->task);
+	free(task);
+}
+
 void MarketRun(TMarket* market) {
 	while (!market->stopFlag) {
 		if (market->queue->front) {
@@ -134,7 +140,7 @@ void MarketRun(TMarket* market) {
 				}
 				TTradeTask* tmp = task;
 				task = (TTradeTask*)task->node.next;
-				free(tmp);
+				TaskFree(tmp);
 			}
 			Unlock(market->loggerMutex);
 		}
@@ -216,7 +222,7 @@ void MarketClose(TMarket* market)
 	CloseHandle(market->thread);
 	CloseHandle(market->loggerMutex);
 	CloseHandle(market->taskMutex);
-	free(market->set);
+	SetFree(market->set);
 	SideFree(market->buy);
 	SideFree(market->sell);
 	TasksFree(market->queue);

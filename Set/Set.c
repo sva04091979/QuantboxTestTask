@@ -26,3 +26,23 @@ void SetInsert(THashSet* set, TOrder* order)
 	}
 }
 
+void HashNodeFree(THashNode* node) {
+	THashObject* it = (THashObject*)node->front;
+	while (it) {
+		THashObject* tmp = it;
+		it = (THashNode*)it->node.next;
+		free(tmp);
+	}
+}
+
+void SetFree(THashSet* set)
+{
+	THashNode* it = set->hash;
+	THashNode* end = it + HASH_SIZE;
+	while (it != end) {
+		HashNodeFree(it);
+		++it;
+	}
+	free(set);
+}
+
