@@ -18,6 +18,7 @@ void LoggerSetTime(TMarket* market, TLog* log)
 	if (log->time < market->timeControl)
 		++market->timeEpoch;
 	log->epoch = market->timeEpoch;
+	market->timeControl = log->time;
 }
 
 void Check(FILE* file) {
