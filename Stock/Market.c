@@ -2,7 +2,7 @@
 #include "Set/Set.h"
 #include "Threads/Threads.h"
 #include "Logger/Logger.h"
-
+#include "stdio.h"
 BOOL Max(size_t l, size_t r) {
 	return l==max(l, r);
 }
@@ -15,13 +15,13 @@ size_t Deal(TMarket* market, TOrder* order) {
 	BOOL(*_max)(size_t, size_t);
 	BOOL(*_min)(size_t, size_t);
 	TTradeSide* side = order->type == BUY ? market->sell : market->buy;
-	TPriceLevel* front = (TPriceLevel*)side->list.front;
+	TPriceLevel* level = (TPriceLevel*)side->list.front;
 	_max = side->_max;
 	_min = side->_min;
-	while (front&&order->volume>0){
-		TOrder* first = (TOrder*)front->queqe.front;
+	while (level&&order->volume>0){
+		TOrder* first = (TOrder*)level->queqe.front;
 		if (first) {
-			if (_min(order->price, first->price))
+			if (!_max(order->price, first->price))
 				break;
 			while (first && order->volume > 0) {
 				size_t delta = min(first->volume, order->volume);
@@ -31,11 +31,11 @@ size_t Deal(TMarket* market, TOrder* order) {
 				if (!first->volume) {
 					SetRemove(market->set, first->id);
 					first = (TOrder*)first->node.next;
-					free(LL_PopFront(&front->queqe));
+					free(LL_PopFront(&level->queqe));
 				}
 			}
 		}
-		front = (TPriceLevel*)front->node.next;
+		level = (TPriceLevel*)level->node.next;
 		if (!first) {
 			free(LL_PopFront(&side->list));
 		}
@@ -51,8 +51,10 @@ void CancelOrder(TMarket* market,const size_t* id) {
 	if (order) {
 		TPriceLevel* level = order->priceLevel;
 		LL_Remove(&order->node);
-		if (!level->queqe.front)
+		if (!level->queqe.front) {
 			LL_Remove(&level->node);
+			free(level);
+		}
 		LoggerCancel(market, order);
 		free(order);
 	}
@@ -70,6 +72,7 @@ void Pending(TMarket* market, TOrder* order) {
 	if (!front) {
 		TPriceLevel* level = (TPriceLevel*)calloc(1,sizeof(TPriceLevel));
 		if (level) {
+			order->priceLevel = level;
 			LL_PushBack(&level->queqe, &order->node);
 			LL_PushBack(&side->list, &level->node);
 		}
@@ -77,16 +80,19 @@ void Pending(TMarket* market, TOrder* order) {
 	else {
 		while (TRUE) {
 			if (order->price == ((TOrder*)front->queqe.front)->price) {
+				order->priceLevel = front;
 				LL_PushBack(&front->queqe, &order->node);
 				break;
 			}
 			else if (order->price == ((TOrder*)back->queqe.front)->price) {
+				order->priceLevel = back;
 				LL_PushBack(&back->queqe, &order->node);
 				break;
 			}
 			else if (_min(order->price, ((TOrder*)front->queqe.front)->price)) {
 				TPriceLevel* level = (TPriceLevel*)calloc(1, sizeof(TPriceLevel));
 				if (level) {
+					order->priceLevel = level;
 					LL_PushBack(&level->queqe, &order->node);
 					LL_InsertBefore(&front->node, &level->node);
 				}
@@ -95,6 +101,7 @@ void Pending(TMarket* market, TOrder* order) {
 			else if (_max(order->price, ((TOrder*)back->queqe.front)->price)) {
 				TPriceLevel* level = (TPriceLevel*)calloc(1, sizeof(TPriceLevel));
 				if (level) {
+					order->priceLevel = level;
 					LL_PushBack(&level->queqe, &order->node);
 					LL_InsertAfter(&back->node, &level->node);
 				}
@@ -155,6 +162,14 @@ void MarketStart(TMarket* market)
 	ResumeThread(market->thread);
 }
 
+void MarketPause(TMarket* market, HANDLE mutex)
+{
+	Lock(mutex);
+	market->stopFlag = TRUE;
+	WaitForSingleObject(market->thread, INFINITE);
+	Unlock(mutex);
+}
+
 void PriceLevelFree(TPriceLevel* level) {
 	TLinkedListNode* it = level->queqe.front;
 	while (it) {
@@ -196,10 +211,8 @@ void LogsFree(TLogQueue* queue) {
 	free(queue);
 }
 
-void MarketStop(TMarket* market)
+void MarketClose(TMarket* market)
 {
-	market->stopFlag = TRUE;
-	WaitForSingleObject(market->thread, INFINITE);
 	CloseHandle(market->thread);
 	CloseHandle(market->loggerMutex);
 	CloseHandle(market->taskMutex);

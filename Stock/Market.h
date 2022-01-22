@@ -4,4 +4,5 @@
 
 
 void MarketStart(TMarket* market);
-void MarketStop(TMarket* market);
+void MarketPause(TMarket* market, HANDLE mutex);
+void MarketClose(TMarket* market);

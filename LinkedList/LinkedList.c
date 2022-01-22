@@ -34,6 +34,8 @@ TLinkedListNode* LL_PopFront(TLinkedList* list)
 	list->front = list->front->next;
 	if (!list->front)
 		list->back = NULL;
+	else
+		list->front->prev = NULL;
 	return node;
 }
 
@@ -88,7 +90,7 @@ void LL_InsertBefore(TLinkedListNode* target, TLinkedListNode* node)
 	else {
 		node->list = target->list;
 		target->prev = node;
-		prev->prev = node;
+		prev->next = node;
 		node->prev = prev;
 		node->next = target;
 	}

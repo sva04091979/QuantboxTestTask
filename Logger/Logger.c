@@ -20,7 +20,49 @@ void LoggerSetTime(TMarket* market, TLog* log)
 	log->epoch = market->timeEpoch;
 }
 
+void Check(FILE* file) {
+	FILE* _check = fopen("check.txt", "r");
+	FILE* check = fopen("MyCheck.txt", "w+b");
+	if (_check && check) {
+		int i = -1;
+		while (!feof(_check)) {
+			char c = fgetc(_check);
+			if (i > -1)
+				++i;
+			if (c == '.')
+				i = 0;
+			if (c == '\n') {
+				if (i > -1 && i < 3) {
+					while (i++ < 3) {
+						fputc('0', check);
+					}
+				}
+				i = -1;
+			}
+			fputc(c, check);
+		}
+		rewind(file);
+		rewind(check);
+		i = 0;
+		while (!feof(file) && !feof(check)) {
+			++i;
+			char f = fgetc(file);
+			char c = fgetc(check);
+			if (f != c) {
+				printf("%i!=%i\n", f, c);
+				printf("Error in pos %i,%i\n", ftell(file), ftell(check));
+				return;
+			}
+		}
+		puts("Ok");
+	}
+	else {
+		puts("Check file open error");
+	}
+}
+
 void LoggerRun(TLoggerParam* param) {
+	static char mess[] = "T,%zu,%s,%zu,%zu,%zu,%zu.%.00zu\n";
 	FILE* file = param->file;
 	TStock* stock = param->stock;
 	TMarket* begin = stock->market;
@@ -28,6 +70,8 @@ void LoggerRun(TLoggerParam* param) {
 	while (!stock->stopFlag) {
 		for (TMarket* market = begin; market != end; ++market) {
 			if (market->log->front) {
+				mess[27] = market->digits / 10 + 48;
+				mess[28] = market->digits + 48;
 				TLogQueue queue;
 				size_t divider = (size_t)Pow(10, market->digits);
 				Lock(market->loggerMutex);
@@ -39,12 +83,12 @@ void LoggerRun(TLoggerParam* param) {
 					it = it->next;
 					switch (log->logType) {
 					case LOG_CANCEL:
-						fprintf(file,"C,%zu", log->firstOrder);
+						fprintf(file,"X,%zu\n", log->firstOrder);
 						break;
 					case LOG_DEAL:
-						fprintf(file,"T,%zu,%s,%zu,%zu,%zu,%zu.%zu",
+						fprintf(file, mess,
 							log->dealNumber,
-							(log->tradeType == BUY ? "B" : "C"),
+							(log->tradeType == BUY ? "B" : "S"),
 							log->firstOrder,
 							log->secondOrder,
 							log->volume,
@@ -58,6 +102,10 @@ void LoggerRun(TLoggerParam* param) {
 
 		}
 	}
+	fflush(file);
+#ifdef _DEBUG
+	Check(file);
+#endif
 	fclose(file);
 	free(param);
 }
@@ -68,7 +116,7 @@ HANDLE LoggerStart(TStock* stock)
 	TLoggerParam* param=(TLoggerParam*)malloc(sizeof(TLoggerParam));
 	if (param) {
 		param->stock = stock;
-		param->file = fopen("output.txt", "w");
+		param->file = fopen("output.txt", "w+b");
 		log = ThreadCreate((LPTHREAD_START_ROUTINE)LoggerRun, param, TRUE);
 	}
 	return log;

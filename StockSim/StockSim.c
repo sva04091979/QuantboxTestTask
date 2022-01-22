@@ -52,6 +52,9 @@ TTradeTask* MakeOrder(TStock* stock,char* buf) {
 						TTradeTask* task = (TTradeTask*)malloc(sizeof(TTradeTask));
 						if (task) {
 							order->id = InterlockedInc(&stock->ordersNumber);
+							if (order->id != order->id_forControl) {
+								printf("Id error. My=%zu, origin=%zu", order->id, order->id_forControl);
+							}
 							task->taskType = ORDER_SEND;
 							task->market = APPLE;
 							task->task = order;
